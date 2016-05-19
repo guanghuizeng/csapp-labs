@@ -139,7 +139,8 @@ NOTES:
  *   Rating: 1
  */
 int bitAnd(int x, int y) {
-  return 2;
+    // 要点: 关注信息的转换
+    return ~((~x) | (~y));
 }
 /* 
  * getByte - Extract byte n from word x
@@ -150,15 +151,8 @@ int bitAnd(int x, int y) {
  *   Rating: 2
  */
 int getByte(int x, int n) {
-
-
-
-
-
-
-
-  return 2;
-
+    // 要点: 理解乘法与left shift的关系. n << 3 => n * 8.
+    return (x >> (n << 3)) & 0xFF;
 }
 /* 
  * logicalShift - shift x to the right by n, using a logical shift
@@ -169,7 +163,11 @@ int getByte(int x, int n) {
  *   Rating: 3 
  */
 int logicalShift(int x, int n) {
-  return 2;
+    // 要点: 用arithmetic shift得到mask. 注意: y << n, 如果 n 小于 0, 是undefined操作.
+    int m1 = (1 << 31) >> n;
+    int m2 = m1 << 1;  // 去除多出的最左位(1)
+    int m3 = ~m2;
+    return (x >> n) & m3;
 }
 /*
  * bitCount - returns count of number of 1's in word
@@ -198,7 +196,7 @@ int bang(int x) {
  *   Rating: 1
  */
 int tmin(void) {
-  return 2;
+	return 1 << 31;
 }
 /* 
  * fitsBits - return 1 if x can be represented as an 
@@ -210,7 +208,9 @@ int tmin(void) {
  *   Rating: 2
  */
 int fitsBits(int x, int n) {
-  return 2;
+    // 比2.70更多限制. 具体分析见文档.
+    int y = x >> (n + ~0);
+    return !y | !(~y);
 }
 /* 
  * divpwr2 - Compute x/(2^n), for 0 <= n <= 30
@@ -221,7 +221,12 @@ int fitsBits(int x, int n) {
  *   Rating: 2
  */
 int divpwr2(int x, int n) {
-    return 2;
+	// 2.77
+	// 关注信息流动。是否要加bias取决于x的正负性。而x的符号位蕴含了正负性！
+    // 因此，合理的猜测是用x的符号位编码bias信息。说真的，尝试了才知道有很多可能性！
+    int sign_bit = (x >> 31) & 0x1;
+    int bias = (sign_bit << n) - sign_bit;
+    return (x + bias) >> n;
 }
 /* 
  * negate - return -x 
@@ -231,7 +236,8 @@ int divpwr2(int x, int n) {
  *   Rating: 2
  */
 int negate(int x) {
-  return 2;
+    // 注意正负数之间的bit patterns
+	return ~x + 1;
 }
 /* 
  * isPositive - return 1 if x > 0, return 0 otherwise 
@@ -241,7 +247,8 @@ int negate(int x) {
  *   Rating: 3
  */
 int isPositive(int x) {
-  return 2;
+	// 注意边界：0. !(!x) => 0x00.
+	return !((x >> 31) & 0x1) & !(!x);
 }
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -251,7 +258,16 @@ int isPositive(int x) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-  return 2;
+	// x,y同号，组合符号信息与x和y的加法运算结果。
+	// x,y异号，y >= 0 >= x. 验证y的符号位是否为0即可。
+   
+	int s1 = (x >> 31) & 0x1;
+	int s2 = (y >> 31) & 0x1;
+
+	int r1 = !(s1 ^ s2) & !(s1 ^ (((y-x) >> 31) & 0x1));
+
+	int r2 = (s1 ^ s2) & !(s2 ^ 0x0);
+	return r1 | r2;
 }
 /*
  * ilog2 - return floor(log base 2 of x), where x > 0
