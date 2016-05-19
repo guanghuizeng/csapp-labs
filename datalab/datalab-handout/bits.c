@@ -187,7 +187,17 @@ int bitCount(int x) {
  *   Rating: 4 
  */
 int bang(int x) {
-  return 2;
+	// 本题要旨是区分0与其他数
+	// 核心思想：若x为负数，则符号位可以作为区分标志；若x为正数，可以利用进位将有效信息集中到符号位上。
+
+	// TODO (总结经验) 对于正数，利用进位, 加上0x7fffffff。
+
+	int r1 = ((x>>31) & 0x1);   // r1 = 0 -> x 非负数；r1 = 1 -> x 负数；
+	int r2 = ((x+((1<<31)-1)) >> 31) & 0x1;  // r2 = 0 -> x 非正数；r2 = 1 -> x 正数；
+
+	// (r1 | r2) -> 0, 则x非负且非正, 即为0
+	// (r1 | r2) -> 1, 则x为正数或负数
+	return ((r1|r2)+1) & 0x1;
 }
 /* 
  * tmin - return minimum two's complement integer 
@@ -318,7 +328,27 @@ unsigned float_neg(unsigned uf) {
  *   Rating: 4
  */
 unsigned float_i2f(int x) {
-  return 2;
+
+	// 1. 符号位
+    // 2. 取绝对值
+    // 3. 计算从最左边的非0位到最右边的非0位之间的长度
+
+	unsigned sign = 0;
+	if (x < 0) { sign = 1; x = -x; }
+	
+	unsigned count = 0;
+	while ((x & 0x1) == 0) { x = x >> 1; count++; }
+
+	int y = x;
+	unsigned count2 = 0;
+	while (y > 0) {
+		count += 1;
+		count2 += 1;
+		y >> 1; 
+	}
+
+	
+
 }
 /* 
  * float_twice - Return bit-level equivalent of expression 2*f for
