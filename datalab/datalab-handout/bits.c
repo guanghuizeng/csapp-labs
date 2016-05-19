@@ -303,7 +303,10 @@ int ilog2(int x) {
  *   Rating: 2
  */
 unsigned float_neg(unsigned uf) {
- return 2;
+	// 本题的关键是理解float的编码规律。联系p.140。
+	if ((uf & (~(1<<31))) > (0xFF << 23)) { return uf; } // NaN
+	// 翻转符号位。方式1: 仍然从float的格式出发，利用unsigned加法的overflow性质, 使uf走向对立面。
+	return uf + (1<<31);
 }
 /* 
  * float_i2f - Return bit-level equivalent of expression (float) x
