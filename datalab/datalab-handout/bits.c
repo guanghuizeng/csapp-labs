@@ -225,7 +225,7 @@ int divpwr2(int x, int n) {
 	// 关注信息流动。是否要加bias取决于x的正负性。而x的符号位蕴含了正负性！
     // 因此，合理的猜测是用x的符号位编码bias信息。说真的，尝试了才知道有很多可能性！
     int sign_bit = (x >> 31) & 0x1;
-    int bias = (sign_bit << n) - sign_bit;
+    int bias = (sign_bit << n) + (~sign_bit+1);
     return (x + bias) >> n;
 }
 /* 
@@ -259,14 +259,26 @@ int isPositive(int x) {
  */
 int isLessOrEqual(int x, int y) {
 	// x,y同号，组合符号信息与x和y的加法运算结果。
-	// x,y异号，y >= 0 >= x. 验证y的符号位是否为0即可。
+	// x,y异号，y >= 0 >= x. (1) 验证y的符号位是否为0; (2)验证x的符号位是否为1.
    
-	int s1 = (x >> 31) & 0x1;
+	int s1 = (x >> 31) & 0x1; // 改进：仅是比较s1与s2是否相同，不需要shift
 	int s2 = (y >> 31) & 0x1;
 
-	int r1 = !(s1 ^ s2) & !(s1 ^ (((y-x) >> 31) & 0x1));
+	// 领悟到的方法：先尝试用额外的运算符表达语义, 掌握正确的解法，再用限定的运算符表示。
 
-	int r2 = (s1 ^ s2) & !(s2 ^ 0x0);
+	int m0 = 1 << 31;
+    int m = ~m0;
+    int r1 = 0;
+	int r2 = 0;
+
+	// 核心：如果x与y符号相同，则比较去除符号位后的部分
+	//	if ((s1 == s2) && (s1 == 0) && (((y & m) - (x & m)) >= 0)) { r1 = 1; }
+	//  if ((s1 == s2) && (s1 == 1) && (((y & m) - (x & m)) >= 0)) { r1 = 1; }
+
+	int sign = ((y & m) + (~(x & m) + 1)) & m0;
+	r1 = !(s1 ^ s2) & (!sign);
+	r2 = (s1 ^ s2) & s1;  
+
 	return r1 | r2;
 }
 /*
