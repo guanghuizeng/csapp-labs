@@ -354,13 +354,14 @@ unsigned float_i2f(int x) {
 	// TODO rounding问题
 	if (length > 23) {
 		int s = length - 23;	   
-		int right = ((1<<s)-1) & x;
-		int least = (1<<s) & x;
+		int m = 1 << s;
+		int right = (m-1) & x;
+		int least = m & x;
 		int shift_least = least >> 1;
-		int half = 1<<(s-1);
+		int half = m >> 1;
 
 		if (right > half) {
-			x = x + (1<<s); // 进位 
+			x = x + m; // 进位 
 		} else if (right == half) {
 			x = x + shift_least;  // round-to-even
 		} else {
