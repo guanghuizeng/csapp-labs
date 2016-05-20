@@ -317,6 +317,8 @@ unsigned float_neg(unsigned uf) {
 	if ((uf & (~(1<<31))) > (0xFF << 23)) { return uf; } // NaN
 	// 翻转符号位。方式1: 仍然从float的格式出发，利用unsigned加法的overflow性质, 使uf走向对立面。
 	return uf + (1<<31);
+
+	// 本题与csapp 2.92相同。现在看来，2.92的解法十分笨拙。
 }
 /* 
  * float_i2f - Return bit-level equivalent of expression (float) x
@@ -329,26 +331,58 @@ unsigned float_neg(unsigned uf) {
  */
 unsigned float_i2f(int x) {
 
+	// 本题要注意处理rounding. round-to-even.
+
 	// 1. 符号位
     // 2. 取绝对值
     // 3. 计算从最左边的非0位到最右边的非0位之间的长度
+	
+	// denormalized value
+	if (x == 0) { return 0; }
 
-	unsigned sign = 0;
+	int sign = 0;
 	if (x < 0) { sign = 1; x = -x; }
 	
-	unsigned count = 0;
-	while ((x & 0x1) == 0) { x = x >> 1; count++; }
-
 	int y = x;
-	unsigned count2 = 0;
+	int count = 0;
 	while (y > 0) {
-		count += 1;
-		count2 += 1;
-		y >> 1; 
+		y = y << 1;
+		count++;
 	}
 
-	
+	int length = 31 - count;
+	// TODO rounding问题
+	if (length > 23) {
+		int s = length - 23;	   
+		int right = ((1<<s)-1) & x;
+		int least = (1<<s) & x;
+		int shift_least = least >> 1;
+		int half = 1<<(s-1);
 
+		if (right > half) {
+			x = x + (1<<s); // 进位 
+		} else if (right == half) {
+			x = x + shift_least;  // round-to-even
+		} else {
+			; // 舍去
+		}
+
+		count = 0;
+		while (x > 0) {
+			x = x << 1;
+			count++;
+		}
+	} else {
+		x = y;
+	}
+	
+	int bias = 127;
+	int exp = ((31-count) + bias) & 0xff;
+    int frac = ((x & (0x7fffff<<8))) >> 8;
+
+	return (sign << 31) | (exp << 23) | frac;
+
+	// TODO 虽然已经通过测试，但是还要做优化。
 }
 /* 
  * float_twice - Return bit-level equivalent of expression 2*f for
@@ -362,5 +396,31 @@ unsigned float_i2f(int x) {
  *   Rating: 4
  */
 unsigned float_twice(unsigned uf) {
-  return 2;
+	/* float: |31|30-23|22-0| */
+	// 参考figure 2.34(p.140)
+
+	unsigned m = 0;
+	unsigned sign = 0;
+	unsigned exp = 0;
+	unsigned frac = 0;
+
+	m = 1 << 31;
+	sign = 0;
+	if (uf >= m) {
+		sign = m;
+		uf = uf - m;
+	}
+
+	exp = (uf >> 23) & 0xff;
+	frac = uf & 0x7fffff;
+	
+	if (exp == 0) {
+		return sign +  (frac << 1);
+	} else if (exp == 0xff) {
+		return sign + uf;
+	} else {
+		return sign + ((exp + 1) << 23) + frac;
+	}
+
+	// 关键是处理 denormalized values 和 special values.
 }
