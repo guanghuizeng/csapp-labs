@@ -10,7 +10,7 @@ Disassembly of section .init:
   400ac9:	48 83 c4 08          	add    $0x8,%rsp
   400acd:	c3                   	retq   
 
-Disassembly of section .plt:
+Disassembly of section .plt:                                  # Procedure Linkage Table
 
 0000000000400ad0 <getenv@plt-0x10>:
   400ad0:	ff 35 1a 25 20 00    	pushq  0x20251a(%rip)        # 602ff0 <_GLOBAL_OFFSET_TABLE_+0x8>
@@ -851,7 +851,7 @@ Disassembly of section .text:
   40151a:	e8 01 f7 ff ff       	callq  400c20 <exit@plt>
   40151f:	8b 15 3b 22 20 00    	mov    0x20223b(%rip),%edx        # 603760 <num_input_strings>
   401525:	48 63 c2             	movslq %edx,%rax
-  401528:	48 8d 34 80          	lea    (%rax,%rax,4),%rsi
+  401528:	48 8d 34 80          	lea    (%rax,%rax,4),%rsi		      # 乘以 5
   40152c:	48 c1 e6 04          	shl    $0x4,%rsi
   401530:	48 81 c6 80 37 60 00 	add    $0x603780,%rsi
   401537:	48 89 f7             	mov    %rsi,%rdi
