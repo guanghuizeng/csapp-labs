@@ -1,0 +1,59 @@
+# Execution begins at address 0
+  				   	  .pos 0
+init:				  	   
+    irmovl Stack, %esp
+	irmovl Stack, %ebp
+	call Main
+	halt
+
+# Sample linked list
+	.align 4
+ele1:
+	.long 0x00a
+	.long ele2
+ele2:
+	.long 0x0b0
+	.long ele3
+ele3:
+	.long 0xc00
+	.long 0
+
+
+Main:	
+    pushl %ebp
+	rrmovl %esp, %ebp
+	irmovl ele1, %eax
+	pushl %eax
+	call rSum
+	rrmovl %ebp, %esp
+	popl %ebp
+	ret
+	  # int rSum(list_ptr ls)
+rSum:		
+  	pushl     %ebp		
+    rrmovl    %esp, %ebp
+    mrmovl    8(%ebp), %ecx  # ecx = ele1  
+	xorl      %eax, %eax	 # val = 0;
+    andl 	  %ecx, %ecx     # set condition codes
+	je		  End									
+
+    mrmovl    (%ecx), %eax   # get *ls, %eax = ls->val 
+	pushl     %eax 	  		 # pushl %eax
+	irmovl    $4, %ebx
+    addl      %ebx, %ecx     # next
+    mrmovl    (%ecx), %ecx
+	pushl     %ecx           # arg
+	call      rSum
+
+	popl	  %esi		     # remove arg
+	popl      %esi			 # stashed value
+	addl      %esi, %eax     # add to val
+
+End:
+    rrmovl   %ebp, %esp
+    popl   %ebp
+    ret
+
+# The stack starts here and grows to lower addresses
+  	    		   .pos 0x100
+Stack:
